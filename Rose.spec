@@ -79,6 +79,56 @@ if Path('injection/mods_map.json').exists():
 else:
     print("[WARNING] injection/mods_map.json not found")
 
+# Workaround for Python 3.14 + Tcl/Tk 9.0: the Tcl/Tk script libraries ship inside
+# zip archives (libtcl9.0.4.zip / libtk9.0.4.zip), which PyInstaller (as of 6.18)
+# cannot collect. Without this, the pyi_rth__tkinter runtime hook crashes the app
+# at startup with: FileNotFoundError: Tcl data directory "..._tcl_data" not found.
+#
+# We therefore extract both archives at build time and bundle their contents as
+# '_tcl_data' and '_tk_data', matching TCL_ROOTNAME/TK_ROOTNAME in PyInstaller's
+# tcl_tk utils (the same paths the runtime hook sets TCL_LIBRARY/TK_LIBRARY to).
+def _collect_tcltk_zipfs(datas_list):
+    import zipfile
+    import tempfile
+
+    tcl_dir = Path(sys.base_prefix) / 'tcl'
+    zip_map = [
+        (tcl_dir / 'libtcl9.0.4.zip', '_tcl_data'),
+        (tcl_dir / 'libtk9.0.4.zip', '_tk_data'),
+    ]
+    if not tcl_dir.exists():
+        print("[WARNING] Tcl directory not found in Python installation")
+        return
+
+    for zip_path, dest_name in zip_map:
+        if not zip_path.exists():
+            print(f"[WARNING] {zip_path.name} not found - skipping {dest_name}")
+            continue
+        try:
+            tmp_root = Path(tempfile.mkdtemp(prefix=f'pyi-{dest_name}-'))
+            with zipfile.ZipFile(zip_path) as zf:
+                zf.extractall(tmp_root)
+            # Entries live under 'tcl_library/' or 'tk_library/' inside the zip.
+            src_dir = None
+            for candidate in (tmp_root / 'tcl_library', tmp_root / 'tk_library'):
+                if candidate.exists():
+                    src_dir = candidate
+                    break
+            if src_dir is None:
+                print(f"[WARNING] Unexpected layout in {zip_path.name} - skipping {dest_name}")
+                continue
+            file_count = 0
+            for f in src_dir.rglob('*'):
+                if f.is_file():
+                    dest = Path(dest_name) / f.relative_to(src_dir)
+                    datas_list.append((str(f), str(dest)))
+                    file_count += 1
+            print(f"[OK] Collected {dest_name} from {zip_path.name} ({file_count} files)")
+        except Exception as e:
+            print(f"[WARNING] Could not collect {dest_name} from {zip_path.name}: {e}")
+
+_collect_tcltk_zipfs(datas)
+
 # Collect Pillow data files (fonts, etc.) to prevent version mismatch issues
 try:
     pillow_datas = collect_data_files('PIL')
