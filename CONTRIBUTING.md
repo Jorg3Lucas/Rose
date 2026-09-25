@@ -148,9 +148,6 @@ Rose/
 │   │   ├── issue_reporter.py
 │   │   ├── junction.py
 │   │   └── safe_extract.py
-│   ├── crypto/             # Skin encryption
-│   │   ├── skin_crypto.py
-│   │   └── key_provider.py
 │   ├── download/           # Download utilities
 │   │   ├── skin_downloader.py
 │   │   ├── smart_skin_downloader.py
@@ -228,7 +225,6 @@ Rose/
 │   │   ├── stun_client.py
 │   │   └── udp_transport.py
 │   ├── protocol/           # Wire protocol
-│   │   ├── crypto.py       # XOR cipher with dynamic keys
 │   │   ├── message_types.py
 │   │   └── token_codec.py
 │   ├── discovery/          # Lobby and skin discovery
@@ -244,7 +240,7 @@ Rose/
 │   │   └── room.ts         # Durable Object party room
 │   └── wrangler.toml
 │
-├── skin-key-worker/        # Cloudflare Worker — skin key server
+├── skin-key-worker/        # Cloudflare Worker — skin key server (private, not in this repo)
 │   ├── src/
 │   │   └── index.ts
 │   └── wrangler.toml

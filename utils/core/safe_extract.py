@@ -37,8 +37,12 @@ def is_safe_path(base_dir: Path, target_path: Path) -> bool:
         base_resolved = base_dir.resolve()
         target_resolved = target_path.resolve()
 
-        # Check if target is within base directory
-        return str(target_resolved).startswith(str(base_resolved))
+        # Check if target is within base directory.
+        # A plain string prefix check is not enough: '<base>/../<base>-evil' shares
+        # the prefix '<base>' but escapes the directory, so compare real path
+        # components instead.
+        target_resolved.relative_to(base_resolved)
+        return True
     except (OSError, ValueError):
         return False
 

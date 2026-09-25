@@ -134,7 +134,6 @@ relay-worker/node_modules/
 skin-key-worker/node_modules/
 relay-worker/.wrangler/
 
-# Local test suites
-/test/
+# Locally built injection tool DLLs
 injection/tools/cslol-dll.dll
 injection/tools/cslol-dll.stub
